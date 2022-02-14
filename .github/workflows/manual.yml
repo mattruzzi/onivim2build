@@ -5,6 +5,8 @@ name: Manual workflow
 # Controls when the action will run. Workflow runs when manually triggered using the UI
 # or API.
 on:
+  push:
+    branches: [ master ]
   workflow_dispatch:
     # Inputs the workflow accepts.
     inputs:
@@ -25,7 +27,18 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Runs a single command using the runners shell
+    - name: Cache
+      uses: actions/cache@v2.1.7
+      with:
+        # A list of files, directories, and wildcard patterns to cache and restore
+        path: ~/.esy
+        # An explicit key for restoring and saving the cache
+        key: esy-cache
+        # An ordered list of keys to use for restoring the cache if no cache hit occurred for key
+#         restore-keys: # optional
+        # The chunk size used to split up large files during upload, in bytes
+#         upload-chunk-size: # optional
+        # Runs a single command using the runners shell
     - name: Send greeting
       run: |
           # Clone the Oni2 repo
@@ -64,7 +77,7 @@ jobs:
           # folder.
 
           # You can run a health check if you would like...
-          _release/Onivim2.AppDir/usr/bin/Oni2 -f --no-log-colors --checkhealth
+          #_release/Onivim2.AppDir/usr/bin/Oni2 -f --no-log-colors --checkhealth
     - name: Upload  Build
       uses: actions/upload-artifact@v2
       with:

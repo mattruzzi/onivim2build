@@ -1,0 +1,73 @@
+# This is a basic workflow that is manually triggered
+
+name: Manual workflow
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+    # Inputs the workflow accepts.
+    inputs:
+      name:
+        # Friendly description to be shown in the UI instead of 'name'
+        description: 'Person to greet'
+        # Default value if no value is explicitly provided
+        default: 'World'
+        # Input has to be provided for the workflow to run
+        required: true
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "greet"
+  greet:
+    # The type of runner that the job will run on
+    runs-on: windows-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+#     - name: Cache
+#       uses: actions/cache@v2.1.7
+#       with:
+#         # A list of files, directories, and wildcard patterns to cache and restore
+#         path: ~/.esy
+#         # An explicit key for restoring and saving the cache
+#         key: esy-cache
+#         # An ordered list of keys to use for restoring the cache if no cache hit occurred for key
+# #         restore-keys: # optional
+#         # The chunk size used to split up large files during upload, in bytes
+# #         upload-chunk-size: # optional
+#         # Runs a single command using the runners shell
+    - name: Send greeting
+      run: |
+          # Clone the Oni2 repo
+          npm install -g windows-build-tools
+          git clone https://github.com/onivim/oni2
+          cd oni2
+          npm install -g node-gyp
+          node-gyp install 14.15.4
+          node install-node-deps.js
+          # Install dependencies in package.json
+          esy install
+
+          # Builds most dependencies and run Oni2 specific bootstrapping.
+          # Takes upwards of 30 mins on a normal machine.
+          # esy does intelligently cache to ~/.esy, subsequent builds are fast.
+          esy bootstrap
+
+          # Finish up remaining parts of building. Should be quick.
+          esy build
+          esy run -f --checkhealth
+          
+          esy '@release' run -f --checkhealth
+          esy '@release' install
+          esy '@release' run --help
+          esy '@release' create
+          ./scripts/windows/publish.ps1
+
+    - name: Upload  Build
+      uses: actions/upload-artifact@v2
+      with:
+         name: Oni2
+         path: /home/runner/work/onivim2build/onivim2build/oni2/_release/
